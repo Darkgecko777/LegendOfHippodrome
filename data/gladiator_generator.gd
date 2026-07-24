@@ -28,6 +28,7 @@ func generate_gladiator() -> CharacterTemplate:
 	t.is_alive = true
 	t.is_monster = false
 	t.visual_key = rules.default_visual_key
+	t.fame = 0
 
 	# Primaries (8–20)
 	t.base_vitality = rules.create_primary_stat()
@@ -38,8 +39,9 @@ func generate_gladiator() -> CharacterTemplate:
 	t.base_resilience = rules.create_primary_stat()
 	t.base_charisma = rules.create_primary_stat()
 
-	# Cunning (flat 2–10)
+	# Cunning (flat 2–10) — Base is fixed, Current starts equal to Base
 	t.base_cunning = rules.create_cunning()
+	t.current_cunning = t.base_cunning
 
 	# Personalities
 	t.combat_personality = rules.create_combat_personality()
@@ -50,6 +52,10 @@ func generate_gladiator() -> CharacterTemplate:
 	t.weapon_skills = {
 		t.preferred_weapon: 1.1
 	}
+
+	# Assignments start empty
+	t.assigned_weapon = null
+	t.assigned_training = null
 
 	# Bake secondaries from primaries
 	_bake_secondaries(t)

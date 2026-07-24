@@ -59,39 +59,45 @@ func _ensure_tier1_gear() -> void:
 	training_offers.append(TrainingEquipment.create(
 		&"wooden_dummy", "Wooden Dummy", &"weapon",
 		[&"weapon_skill"], 1, 250,
-		"Trains the chosen weapon skill."))
+		"Trains the chosen weapon skill.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"weighted_vest", "Weighted Vest", &"endurance",
 		[&"max_stamina", &"stamina_regen", &"fatigue_resistance"], 1, 250,
-		"Endurance conditioning."))
+		"Endurance conditioning.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"heavy_sandbag", "Heavy Sandbag", &"strength",
 		[&"base_damage", &"ability_power"], 1, 250,
-		"Strength and power work."))
+		"Strength and power work.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"balance_beam", "Balance Beam", &"agility",
 		[&"attack_speed", &"dodge_chance"], 1, 250,
-		"Footwork and speed."))
+		"Footwork and speed.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"precision_target", "Precision Target", &"precision",
 		[&"accuracy", &"crit_chance", &"crit_multiplier"], 1, 250,
-		"Aim and timing."))
+		"Aim and timing.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"iron_hide_drills", "Iron Hide Drills", &"resilience",
 		[&"crit_defense_factor", &"status_resistance"], 1, 250,
-		"Toughness and pain tolerance."))
+		"Toughness and pain tolerance.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"vitality_circuit", "Vitality Circuit", &"vitality",
 		[&"max_health", &"injury_recovery_chance"], 1, 250,
-		"Conditioning and recovery."))
+		"Conditioning and recovery.", 0.0, 0.0))
 	training_offers.append(TrainingEquipment.create(
 		&"strategy_table", "Strategy Table", &"cunning",
-		[&"cunning"], 1, 250,
-		"Mental training — the core progression pillar."))
+		[], 1, 250,
+		"Mental training — the core progression pillar.", 0.8, 1.2))
 	training_offers.append(TrainingEquipment.create(
 		&"arena_presence", "Arena Presence Training", &"charisma",
 		[&"crowd_hype_increment", &"intimidation_resistance"], 1, 250,
-		"Presence and crowd command."))
+		"Presence and crowd command.", 0.0, 0.0))
+	# Medic
+	training_offers.append(TrainingEquipment.create(
+		&"medic", "Medic", &"recovery",
+		[], 1, 200,
+		"Increases injury recovery chance for the assigned gladiator this week.",
+		0.0, 0.0, true, 1.75))
 
 
 ## Remove a gladiator offer by index after purchase.
