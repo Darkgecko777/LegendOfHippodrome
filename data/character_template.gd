@@ -24,8 +24,18 @@ extends Resource
 #endregion
 
 #region Cunning (main long-term progression)
-## How intelligently the combat AI applies decisions. Starting range 2–10, no hard ceiling.
+## Fixed at generation (2–10). Never changes. Regression target for Current Cunning.
 @export var base_cunning: float = 5.0
+## Dynamic working value used by combat AI and learning system.
+@export var current_cunning: float = 5.0
+#endregion
+
+#region Fame & Assignments
+@export var fame: int = 0
+## null = Unarmed
+@export var assigned_weapon: WeaponData = null
+## null = Observation (or Medic when is_medic)
+@export var assigned_training: TrainingEquipment = null
 #endregion
 
 #region Vitality Secondaries (baked at generation)
@@ -109,6 +119,18 @@ func get_display_name() -> String:
 	if display_name != "":
 		return display_name
 	return character_id if character_id != "" else "Unnamed"
+
+
+func get_weapon_display() -> String:
+	if assigned_weapon != null:
+		return assigned_weapon.display_name
+	return "Unarmed"
+
+
+func get_activity_display() -> String:
+	if assigned_training != null:
+		return assigned_training.display_name
+	return "Observation"
 
 
 ## Reset combat-volatile values before a fight. Does not touch roster-persistent data.
