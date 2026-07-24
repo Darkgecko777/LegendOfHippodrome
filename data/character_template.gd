@@ -85,6 +85,13 @@ extends Resource
 @export var noncombat_personality: String = "Stoic"
 #endregion
 
+#region Weapon Preference & Skills
+## Exactly one preferred weapon type assigned at generation.
+@export var preferred_weapon: StringName = &"gladius"
+## Skill multiplier per weapon type. Starts with a modest value in the preferred weapon.
+@export var weapon_skills: Dictionary = {}
+#endregion
+
 # Combat Abilities
 @export var abilities: Array[Ability] = []
 

@@ -5,6 +5,8 @@ extends Node
 
 @export var rules: GladiatorGeneratorRules
 
+const WEAPON_TYPES: Array[StringName] = [&"gladius", &"spear", &"trident", &"net"]
+
 
 func _ready() -> void:
 	if rules == null:
@@ -42,6 +44,12 @@ func generate_gladiator() -> CharacterTemplate:
 	# Personalities
 	t.combat_personality = rules.create_combat_personality()
 	t.noncombat_personality = rules.create_noncombat_personality()
+
+	# Preferred weapon (exactly one) + modest starting skill
+	t.preferred_weapon = WEAPON_TYPES[randi() % WEAPON_TYPES.size()]
+	t.weapon_skills = {
+		t.preferred_weapon: 1.1
+	}
 
 	# Bake secondaries from primaries
 	_bake_secondaries(t)

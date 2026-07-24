@@ -43,9 +43,10 @@ theme_override_constants/margin_bottom = 12
 
 [node name="TabContainer" type="TabContainer" parent="MarginContainer"]
 layout_mode = 2
-current_tab = 0
+current_tab = 1
 
 [node name="Roster" type="MarginContainer" parent="MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -53,7 +54,6 @@ metadata/_tab_index = 0
 layout_mode = 2
 
 [node name="Market" type="MarginContainer" parent="MarginContainer/TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -64,37 +64,105 @@ size_flags_vertical = 3
 
 [node name="MarketMargin" type="MarginContainer" parent="MarginContainer/TabContainer/Market/MarketPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="MarketVBox" type="VBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
-[node name="MarketTitle" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
 layout_mode = 2
+
+[node name="MarketTitle" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 22
 text = "Market"
 
-[node name="MarketBlurb" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
-layout_mode = 2
-text = "Recruit a random gladiator into your active roster.\nRoster is limited to 5 fighters."
-autowrap_mode = 2
-
-[node name="GenerateGladiatorButton" type="Button" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 40)
-layout_mode = 2
-size_flags_horizontal = 0
-text = "Generate Random Gladiator"
-
-[node name="MarketStatusLabel" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+[node name="GoldLabel" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Roster: 0/5 — Generate adds a random gladiator."
+text = "Gold: 600"
+
+[node name="RenownLabel" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Renown: 20"
+
+[node name="PurchaseButton" type="Button" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 32)
+layout_mode = 2
+disabled = true
+text = "Purchase"
+
+[node name="ListsRow" type="HBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="GladiatorCol" type="VBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GladiatorHeader" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/GladiatorCol"]
+layout_mode = 2
+text = "Fresh Recruits (this week)"
+
+[node name="GladiatorList" type="ItemList" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/GladiatorCol"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 180)
+
+[node name="WeaponCol" type="VBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="WeaponHeader" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/WeaponCol"]
+layout_mode = 2
+text = "Weapons (Tier 1)"
+
+[node name="WeaponList" type="ItemList" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/WeaponCol"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 180)
+
+[node name="TrainingCol" type="VBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TrainingHeader" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/TrainingCol"]
+layout_mode = 2
+text = "Training Equipment (Tier 1)"
+
+[node name="TrainingList" type="ItemList" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/TrainingCol"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 180)
+
+[node name="FooterRow" type="HBoxContainer" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+layout_mode = 2
+
+[node name="MarketStatusLabel" type="Label" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Roster: 0/5  |  Gladiator offers this week: 5"
 autowrap_mode = 2
+
+[node name="RefreshMarketButton" type="Button" parent="MarginContainer/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refresh Week"
 
 [node name="Calendar" type="MarginContainer" parent="MarginContainer/TabContainer"]
 visible = false
