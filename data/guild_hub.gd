@@ -1,8 +1,9 @@
 extends Control
 
 ## Guild Hub controller.
-## Market tab: 5 gladiator offers + weapons + training equipment.
-## Purchase gladiators into the existing roster. Gear purchases are stubbed for now.
+## Market tab: 5 gladiator offers + weapons + training equipment + Medic.
+## Purchases now go into real GuildState ownership.
+## Advance Week resolves training / recovery / cunning decay via WeekResolver.
 
 const MAX_ROSTER_SIZE := 5
 
@@ -54,6 +55,7 @@ func _ensure_guild_state() -> void:
 		guild_state = GuildState.new()
 		guild_state.gold = 600
 		guild_state.renown = 20
+		guild_state.current_week = 1
 
 
 func _ensure_market_state() -> void:
@@ -114,7 +116,7 @@ func _build_fog_descriptors(t: CharacterTemplate) -> String:
 		{"name": "precision", "value": t.base_precision},
 		{"name": "resilience", "value": t.base_resilience},
 		{"name": "charisma", "value": t.base_charisma},
-		{"name": "cunning", "value": int(t.base_cunning)},
+		{"name": "cunning", "value": int(t.current_cunning)},
 	]
 	stats.sort_custom(func(a, b): return a["value"] > b["value"])
 
@@ -251,10 +253,14 @@ func _purchase_weapon(index: int) -> void:
 		if market_status:
 			market_status.text = "Not enough gold."
 		return
-	# Stub: inventory system comes later. Just deduct gold and report.
+	# Real ownership
+	var owned := WeaponData.create(w.id, w.display_name, w.tier, w.cost, w.description)
+	guild_state.add_weapon(owned)
 	if market_status:
-		market_status.text = "Purchased %s for %d gold (inventory stub)." % [w.display_name, w.cost]
-	print("Purchased weapon: %s for %d gold" % [w.display_name, w.cost])
+		market_status.text = "Purchased %s for %d gold. Guild now owns %d weapons." % [
+			w.display_name, w.cost, guild_state.owned_weapons.size()
+		]
+	print("Purchased weapon: %s for %d gold (owned: %d)" % [w.display_name, w.cost, guild_state.owned_weapons.size()])
 
 
 func _purchase_training(index: int) -> void:
@@ -265,10 +271,20 @@ func _purchase_training(index: int) -> void:
 		if market_status:
 			market_status.text = "Not enough gold."
 		return
-	# Stub: inventory system comes later.
+	# Real ownership (Medic or training)
+	var owned := TrainingEquipment.create(
+		t.id, t.display_name, t.linked_primary, t.possible_secondaries,
+		t.tier, t.cost, t.description,
+		t.cunning_gain_min, t.cunning_gain_max, t.is_medic, t.recovery_multiplier
+	)
+	guild_state.add_training(owned)
+	var pool_name := "medics" if t.is_medic else "training items"
+	var count := guild_state.owned_medics.size() if t.is_medic else guild_state.owned_training.size()
 	if market_status:
-		market_status.text = "Purchased %s for %d gold (inventory stub)." % [t.display_name, t.cost]
-	print("Purchased training: %s for %d gold" % [t.display_name, t.cost])
+		market_status.text = "Purchased %s for %d gold. Guild now owns %d %s." % [
+			t.display_name, t.cost, count, pool_name
+		]
+	print("Purchased training/medic: %s for %d gold" % [t.display_name, t.cost])
 
 
 func _on_refresh_pressed() -> void:
@@ -293,4 +309,36 @@ func _update_market_status() -> void:
 		return
 	var count := roster_sheet.roster.size()
 	var offers := market_state.gladiator_offers.size() if market_state else 0
-	market_status.text = "Roster: %d/%d  |  Gladiator offers this week: %d" % [count, MAX_ROSTER_SIZE, offers]
+	var owned_w := guild_state.owned_weapons.size() if guild_state else 0
+	var owned_t := (guild_state.owned_training.size() + guild_state.owned_medics.size()) if guild_state else 0
+	market_status.text = "Roster: %d/%d  |  Offers: %d  |  Owned gear: %dW / %dT  |  Week %d" % [
+		count, MAX_ROSTER_SIZE, offers, owned_w, owned_t, guild_state.current_week if guild_state else 1
+	]
+
+
+## Call this from a global Advance Week button (or temporarily from anywhere).
+## Performs the soft unused-training check then resolves the week.
+func request_advance_week() -> void:
+	if roster_sheet == null or guild_state == null:
+		return
+	var roster: Array = roster_sheet.roster
+
+	# Soft safeguard
+	var has_observer := false
+	for g in roster:
+		if g is CharacterTemplate and g.assigned_training == null:
+			has_observer = true
+			break
+	var has_unused_training := guild_state.get_available_training(roster).size() > 0
+	if has_observer and has_unused_training:
+		# In a full UI this would be a confirmation dialog.
+		# For now we log and proceed; the design calls for a toggleable pop-out.
+		print("Advance Week warning: observers present and unused training available.")
+
+	var summary: Array[String] = WeekResolver.resolve_week(roster, guild_state)
+	for line in summary:
+		print(line)
+	if market_status:
+		market_status.text = "Week advanced. See console / future Weekly Summary for details."
+	_update_currency_display()
+	_update_market_status()
