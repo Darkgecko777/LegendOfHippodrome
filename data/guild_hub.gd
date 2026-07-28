@@ -1,8 +1,6 @@
 extends Control
 
-## Guild Hub controller — Option A layout.
-## Assignments tab: each gladiator row has Weapon + Activity dropdowns.
-## Dropdowns auto-assign and stay in sync so the same item cannot be chosen twice.
+## Guild Hub controller — Option A layout + Calendar registration.
 
 const MAX_ROSTER_SIZE := 5
 
@@ -32,6 +30,9 @@ const MAX_ROSTER_SIZE := 5
 @onready var owned_weapons_list: ItemList = %OwnedWeaponsList
 @onready var owned_training_list: ItemList = %OwnedTrainingList
 
+# Calendar (built at runtime under the existing Calendar tab)
+@onready var calendar_tab: MarginContainer = $MainVBox/ContentMargin/TabContainer/Calendar
+
 var guild_state: GuildState
 var market_state: MarketState
 
@@ -40,21 +41,31 @@ enum Category { NONE, GLADIATOR, WEAPON, TRAINING }
 var selected_category: Category = Category.NONE
 var selected_index: int = -1
 
-# Assignment row tracking (parallel arrays)
+# Assignment row tracking
 var row_gladiators: Array[GladiatorTemplate] = []
 var row_weapon_options: Array[OptionButton] = []
 var row_activity_options: Array[OptionButton] = []
-var _updating_dropdowns := false  # prevent re-entrant signals
+var _updating_dropdowns := false
+
+# Calendar UI refs (created in code)
+var calendar_offers_list: ItemList
+var calendar_detail_label: Label
+var calendar_gladiator_option: OptionButton
+var calendar_intervention_option: OptionButton
+var calendar_register_button: Button
+var calendar_status_label: Label
+var selected_offer_index: int = -1
 
 
 func _ready() -> void:
 	_ensure_guild_state()
 	_ensure_market_state()
+	_build_calendar_ui()
 
 	if advance_week_button:
 		advance_week_button.pressed.connect(_on_advance_week_pressed)
 	if fight_button:
-		fight_button.disabled = true
+		fight_button.pressed.connect(_on_fight_pressed)
 
 	if purchase_button:
 		purchase_button.pressed.connect(_on_purchase_pressed)
@@ -76,6 +87,7 @@ func _ensure_guild_state() -> void:
 		guild_state.gold = 600
 		guild_state.renown = 20
 		guild_state.current_week = 1
+		guild_state.refresh_match_offers(3)
 
 
 func _ensure_market_state() -> void:
@@ -88,8 +100,10 @@ func _refresh_all() -> void:
 	_refresh_market_ui()
 	_rebuild_assignment_rows()
 	_refresh_guild_ownership_ui()
+	_refresh_calendar_ui()
 	_update_currency_display()
 	_update_market_status()
+	_update_fight_button()
 
 
 # ─────────────────────────────────────────────
@@ -100,9 +114,20 @@ func _update_currency_display() -> void:
 	if gold_label and guild_state:
 		gold_label.text = "Gold: %d" % guild_state.gold
 	if renown_label and guild_state:
-		renown_label.text = "Renown: %d" % guild_state.renown
+		renown_label.text = "Renown: %d  (Tier %d)" % [guild_state.renown, guild_state.get_guild_tier()]
 	if week_label and guild_state:
 		week_label.text = "Week %d" % guild_state.current_week
+
+
+func _update_fight_button() -> void:
+	if fight_button == null or guild_state == null:
+		return
+	fight_button.disabled = not guild_state.has_registered_match()
+	if guild_state.has_registered_match():
+		var m: MonsterTemplate = guild_state.registered_match.get("monster")
+		fight_button.text = "Fight: %s" % (m.get_display_name() if m else "Fight")
+	else:
+		fight_button.text = "Fight"
 
 
 func _on_advance_week_pressed() -> void:
@@ -132,13 +157,253 @@ func request_advance_week() -> void:
 		if g is GladiatorTemplate:
 			g.assigned_training = null
 
+	# Refresh match offers each week
+	guild_state.refresh_match_offers(3)
+	# Keep registered match across the week until fought or explicitly cleared
+
 	_refresh_all()
 	if market_status:
 		market_status.text = "Week advanced to %d. See console for full summary." % guild_state.current_week
 
 
+func _on_fight_pressed() -> void:
+	if not guild_state.has_registered_match():
+		return
+	# Skeleton: just print the match details. Real text-log resolver comes next.
+	var rm := guild_state.registered_match
+	var monster: MonsterTemplate = rm.get("monster")
+	var glad: GladiatorTemplate = rm.get("gladiator")
+	var inter: int = rm.get("intervention_level", 0)
+	print("=== FIGHT START ===")
+	print("Gladiator: %s" % (glad.get_display_name() if glad else "?"))
+	print("Weapon: %s" % (glad.get_weapon_display() if glad else "?"))
+	print("Monster: %s (Tier %d)" % [monster.get_display_name() if monster else "?", monster.tier if monster else 0])
+	print("Intervention level: %d" % inter)
+	print("Threat: %d | Base purse: %d gold / %d fame" % [rm.get("threat", 0), rm.get("base_gold", 0), rm.get("base_fame", 0)])
+	print("(Text-log combat resolver not yet implemented — match data is ready.)")
+	# For now we leave the registration in place so the player can inspect it.
+	# Later: resolve → clear_registered_match() → award gold/fame/renown.
+
+
 # ─────────────────────────────────────────────
-# Market (unchanged logic)
+# Calendar
+# ─────────────────────────────────────────────
+
+func _build_calendar_ui() -> void:
+	if calendar_tab == null:
+		return
+	# Clear the placeholder
+	for child in calendar_tab.get_children():
+		child.queue_free()
+
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	calendar_tab.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Calendar — Available Matches"
+	title.add_theme_font_size_override("font_size", 22)
+	vbox.add_child(title)
+
+	var lists_row := HBoxContainer.new()
+	lists_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lists_row.add_theme_constant_override("separation", 16)
+	vbox.add_child(lists_row)
+
+	# Left: offer list
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lists_row.add_child(left)
+
+	var offers_header := Label.new()
+	offers_header.text = "Offers this cycle"
+	left.add_child(offers_header)
+
+	calendar_offers_list = ItemList.new()
+	calendar_offers_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	calendar_offers_list.custom_minimum_size = Vector2(0, 180)
+	left.add_child(calendar_offers_list)
+	calendar_offers_list.item_selected.connect(_on_offer_selected)
+
+	# Right: detail + registration
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right.add_theme_constant_override("separation", 8)
+	lists_row.add_child(right)
+
+	var detail_header := Label.new()
+	detail_header.text = "Match Detail"
+	right.add_child(detail_header)
+
+	calendar_detail_label = Label.new()
+	calendar_detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	calendar_detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	calendar_detail_label.text = "Select an offer to see details and register."
+	right.add_child(calendar_detail_label)
+
+	var glad_row := HBoxContainer.new()
+	right.add_child(glad_row)
+	var glad_lbl := Label.new()
+	glad_lbl.text = "Gladiator:"
+	glad_lbl.custom_minimum_size = Vector2(90, 0)
+	glad_row.add_child(glad_lbl)
+	calendar_gladiator_option = OptionButton.new()
+	calendar_gladiator_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	glad_row.add_child(calendar_gladiator_option)
+
+	var inter_row := HBoxContainer.new()
+	right.add_child(inter_row)
+	var inter_lbl := Label.new()
+	inter_lbl.text = "Intervention:"
+	inter_lbl.custom_minimum_size = Vector2(90, 0)
+	inter_row.add_child(inter_lbl)
+	calendar_intervention_option = OptionButton.new()
+	calendar_intervention_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	calendar_intervention_option.add_item("None (max risk / max reward)", 0)
+	calendar_intervention_option.add_item("Light", 1)
+	calendar_intervention_option.add_item("Standard", 2)
+	calendar_intervention_option.add_item("Heavy", 3)
+	calendar_intervention_option.add_item("Maximum (near-zero death chance)", 4)
+	inter_row.add_child(calendar_intervention_option)
+
+	calendar_register_button = Button.new()
+	calendar_register_button.text = "Register for this Fight"
+	calendar_register_button.pressed.connect(_on_register_pressed)
+	right.add_child(calendar_register_button)
+
+	calendar_status_label = Label.new()
+	calendar_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	calendar_status_label.text = ""
+	vbox.add_child(calendar_status_label)
+
+
+func _refresh_calendar_ui() -> void:
+	if calendar_offers_list == null or guild_state == null:
+		return
+
+	calendar_offers_list.clear()
+	for offer in guild_state.available_offers:
+		var m: MonsterTemplate = offer["monster"]
+		var line := "Tier %d — %s  |  Threat %d  |  %dg / %df" % [
+			m.tier, m.get_display_name(), offer["threat"], offer["base_gold"], offer["base_fame"]
+		]
+		calendar_offers_list.add_item(line)
+
+	# Gladiator dropdown
+	calendar_gladiator_option.clear()
+	var roster: Array = roster_sheet.roster if roster_sheet else []
+	if roster.is_empty():
+		calendar_gladiator_option.add_item("(No gladiators)")
+		calendar_gladiator_option.set_item_disabled(0, true)
+	else:
+		for g in roster:
+			if g is GladiatorTemplate:
+				var idx := calendar_gladiator_option.item_count
+				calendar_gladiator_option.add_item(g.get_display_name())
+				calendar_gladiator_option.set_item_metadata(idx, g)
+
+	selected_offer_index = -1
+	calendar_detail_label.text = "Select an offer to see details and register."
+
+	if guild_state.has_registered_match():
+		var rm := guild_state.registered_match
+		var m: MonsterTemplate = rm.get("monster")
+		var g: GladiatorTemplate = rm.get("gladiator")
+		calendar_status_label.text = "Registered: %s vs %s (Intervention %d). Use the Fight button when ready." % [
+			g.get_display_name() if g else "?",
+			m.get_display_name() if m else "?",
+			rm.get("intervention_level", 0)
+		]
+	else:
+		calendar_status_label.text = "No fight registered. Select an offer and register."
+
+
+func _on_offer_selected(index: int) -> void:
+	selected_offer_index = index
+	if index < 0 or index >= guild_state.available_offers.size():
+		return
+	offer_detail(index)
+
+
+func offer_detail(index: int) -> void:
+	var offer: Dictionary = guild_state.available_offers[index]
+	var m: MonsterTemplate = offer["monster"]
+	var known := guild_state.knows_vulnerabilities(m)
+	var vuln_text := ""
+	if known:
+		var tags: Array[String] = []
+		for t in m.vulnerability_tags:
+			tags.append(str(t).capitalize().replace("_", " "))
+		vuln_text = "Known vulnerabilities: %s" % ", ".join(tags)
+	else:
+		vuln_text = "Vulnerabilities: fogged (higher renown or more encounters will reveal them)."
+
+	var lines: Array[String] = []
+	lines.append("%s  (Tier %d)" % [m.get_display_name(), m.tier])
+	lines.append(m.flavour)
+	lines.append("")
+	lines.append("Threat Score: %d" % offer["threat"])
+	lines.append("Base purse: %d gold / %d fame" % [offer["base_gold"], offer["base_fame"]])
+	lines.append("(Intervention reduces both death chance and the final purse.)")
+	lines.append("")
+	lines.append(vuln_text)
+	lines.append("")
+	lines.append("Preferred stance bias: %s" % str(m.preferred_stance).capitalize())
+	calendar_detail_label.text = "\n".join(lines)
+
+
+func _on_register_pressed() -> void:
+	if selected_offer_index < 0 or selected_offer_index >= guild_state.available_offers.size():
+		calendar_status_label.text = "Select an offer first."
+		return
+	var roster: Array = roster_sheet.roster if roster_sheet else []
+	if roster.is_empty():
+		calendar_status_label.text = "Recruit a gladiator before registering."
+		return
+	var glad_idx := calendar_gladiator_option.selected
+	if glad_idx < 0:
+		return
+	var glad: GladiatorTemplate = calendar_gladiator_option.get_item_metadata(glad_idx) as GladiatorTemplate
+	if glad == null:
+		calendar_status_label.text = "Select a valid gladiator."
+		return
+
+	var offer: Dictionary = guild_state.available_offers[selected_offer_index]
+	var inter_level := calendar_intervention_option.get_selected_id()
+
+	guild_state.registered_match = {
+		"monster": offer["monster"],
+		"gladiator": glad,
+		"intervention_level": inter_level,
+		"threat": offer["threat"],
+		"base_gold": offer["base_gold"],
+		"base_fame": offer["base_fame"],
+	}
+
+	calendar_status_label.text = "Registered: %s vs %s (Intervention %d). Fight button is now active." % [
+		glad.get_display_name(),
+		(offer["monster"] as MonsterTemplate).get_display_name(),
+		inter_level
+	]
+	_update_fight_button()
+
+
+# ─────────────────────────────────────────────
+# Market
 # ─────────────────────────────────────────────
 
 func _refresh_market_ui() -> void:
@@ -286,6 +551,7 @@ func _purchase_gladiator(index: int) -> void:
 	_populate_gladiator_list()
 	if market_status:
 		market_status.text = "Recruited %s for %d gold — Roster %d/%d" % [template.display_name, price, new_roster.size(), MAX_ROSTER_SIZE]
+	_refresh_calendar_ui()
 
 
 func _purchase_weapon(index: int) -> void:
@@ -342,14 +608,13 @@ func _update_market_status() -> void:
 
 
 # ─────────────────────────────────────────────
-# Assignments — per-gladiator dropdown rows
+# Assignments
 # ─────────────────────────────────────────────
 
 func _rebuild_assignment_rows() -> void:
 	if assignment_rows == null or roster_sheet == null or guild_state == null:
 		return
 
-	# Clear old rows
 	for child in assignment_rows.get_children():
 		child.queue_free()
 	row_gladiators.clear()
@@ -371,27 +636,23 @@ func _rebuild_assignment_rows() -> void:
 		row.add_theme_constant_override("separation", 12)
 		assignment_rows.add_child(row)
 
-		# Name
 		var name_lbl := Label.new()
 		name_lbl.text = t.get_display_name()
 		name_lbl.custom_minimum_size = Vector2(140, 0)
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(name_lbl)
 
-		# Fame (compact)
 		var fame_lbl := Label.new()
 		fame_lbl.text = "Fame %d" % t.fame
 		fame_lbl.custom_minimum_size = Vector2(70, 0)
 		row.add_child(fame_lbl)
 
-		# Weapon dropdown
 		var wpn_opt := OptionButton.new()
 		wpn_opt.custom_minimum_size = Vector2(160, 0)
 		wpn_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(wpn_opt)
 		wpn_opt.item_selected.connect(_on_weapon_dropdown_selected.bind(t, wpn_opt))
 
-		# Activity dropdown
 		var act_opt := OptionButton.new()
 		act_opt.custom_minimum_size = Vector2(200, 0)
 		act_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -416,13 +677,11 @@ func _refresh_all_dropdowns() -> void:
 		var wpn_opt: OptionButton = row_weapon_options[i]
 		var act_opt: OptionButton = row_activity_options[i]
 
-		# --- Weapons ---
 		wpn_opt.clear()
 		wpn_opt.add_item("Unarmed")
 		wpn_opt.set_item_metadata(0, null)
 		var selected_wpn_idx := 0
 		var avail_w := guild_state.get_available_weapons(roster)
-		# Always include the one currently assigned to this gladiator
 		if t.assigned_weapon != null and not avail_w.has(t.assigned_weapon):
 			avail_w.append(t.assigned_weapon)
 		for w in avail_w:
@@ -433,7 +692,6 @@ func _refresh_all_dropdowns() -> void:
 				selected_wpn_idx = idx
 		wpn_opt.select(selected_wpn_idx)
 
-		# --- Activities ---
 		act_opt.clear()
 		act_opt.add_item("Observation")
 		act_opt.set_item_metadata(0, null)
@@ -468,7 +726,7 @@ func _on_weapon_dropdown_selected(index: int, t: GladiatorTemplate, opt: OptionB
 	if _updating_dropdowns:
 		return
 	var meta = opt.get_item_metadata(index)
-	t.assigned_weapon = meta as WeaponData  # null if Unarmed
+	t.assigned_weapon = meta as WeaponData
 	_refresh_all_dropdowns()
 	if assignments_status:
 		assignments_status.text = "%s → %s" % [t.get_display_name(), t.get_weapon_display()]
@@ -478,14 +736,14 @@ func _on_activity_dropdown_selected(index: int, t: GladiatorTemplate, opt: Optio
 	if _updating_dropdowns:
 		return
 	var meta = opt.get_item_metadata(index)
-	t.assigned_training = meta as TrainingEquipment  # null if Observation
+	t.assigned_training = meta as TrainingEquipment
 	_refresh_all_dropdowns()
 	if assignments_status:
 		assignments_status.text = "%s → %s" % [t.get_display_name(), t.get_activity_display()]
 
 
 # ─────────────────────────────────────────────
-# Guild ownership view
+# Guild ownership
 # ─────────────────────────────────────────────
 
 func _refresh_guild_ownership_ui() -> void:
