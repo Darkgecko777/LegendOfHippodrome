@@ -1,16 +1,16 @@
 extends Node
 
 # For editor testing / quick battles
-@export var player_definition: CharacterTemplate
-@export var enemy_definition: CharacterTemplate
+@export var player_definition: GladiatorTemplate
+@export var enemy_definition: GladiatorTemplate
 
 # Main roster (persistent)
-var guild_roster: Array[CharacterTemplate] = []
+var guild_roster: Array[GladiatorTemplate] = []
 
 
 ## Create a combat token from a persistent roster entry.
 ## Uses create_runtime_data() so the roster copy is not mutated by combat.
-func create_token_from_template(persistent: CharacterTemplate, is_player: bool = false) -> CharacterToken:
+func create_token_from_template(persistent: GladiatorTemplate, is_player: bool = false) -> CharacterToken:
 	if not persistent:
 		push_error("CharacterManager: Missing persistent character!")
 		return null
@@ -34,6 +34,6 @@ func create_fight_pair() -> Dictionary:
 
 
 ## Add a generated gladiator to the persistent roster.
-func add_to_roster(template: CharacterTemplate) -> void:
+func add_to_roster(template: GladiatorTemplate) -> void:
 	if template:
 		guild_roster.append(template)

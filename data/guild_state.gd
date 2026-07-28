@@ -54,7 +54,7 @@ func add_training(t: TrainingEquipment) -> void:
 func get_available_weapons(roster: Array) -> Array[WeaponData]:
 	var assigned_ids: Dictionary = {}
 	for g in roster:
-		if g is CharacterTemplate and g.assigned_weapon != null:
+		if g is GladiatorTemplate and g.assigned_weapon != null:
 			assigned_ids[g.assigned_weapon] = true
 	var result: Array[WeaponData] = []
 	for w in owned_weapons:
@@ -67,7 +67,7 @@ func get_available_weapons(roster: Array) -> Array[WeaponData]:
 func get_available_training(roster: Array) -> Array[TrainingEquipment]:
 	var assigned_ids: Dictionary = {}
 	for g in roster:
-		if g is CharacterTemplate and g.assigned_training != null and not g.assigned_training.is_medic:
+		if g is GladiatorTemplate and g.assigned_training != null and not g.assigned_training.is_medic:
 			assigned_ids[g.assigned_training] = true
 	var result: Array[TrainingEquipment] = []
 	for t in owned_training:
@@ -80,7 +80,7 @@ func get_available_training(roster: Array) -> Array[TrainingEquipment]:
 func get_available_medics(roster: Array) -> Array[TrainingEquipment]:
 	var assigned_ids: Dictionary = {}
 	for g in roster:
-		if g is CharacterTemplate and g.assigned_training != null and g.assigned_training.is_medic:
+		if g is GladiatorTemplate and g.assigned_training != null and g.assigned_training.is_medic:
 			assigned_ids[g.assigned_training] = true
 	var result: Array[TrainingEquipment] = []
 	for m in owned_medics:

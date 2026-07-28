@@ -2,7 +2,7 @@ class_name RosterCharacterSheet
 extends Control
 
 ## Roster Character Sheet
-## Populates from CharacterTemplate instances produced by the generator.
+## Populates from GladiatorTemplate instances produced by the generator.
 
 @onready var roster_list: VBoxContainer = %RosterList
 @onready var empty_state: Control = %EmptyState
@@ -59,8 +59,8 @@ extends Control
 # Abilities
 @onready var ability_list: HBoxContainer = %AbilityList
 
-var current_template: CharacterTemplate = null
-var roster: Array[CharacterTemplate] = []
+var current_template: GladiatorTemplate = null
+var roster: Array[GladiatorTemplate] = []
 
 
 func _ready() -> void:
@@ -102,7 +102,7 @@ func _set_label_text_by_path(path: String, text: String) -> void:
 		(node as Label).text = text
 
 
-func set_roster(new_roster: Array[CharacterTemplate]) -> void:
+func set_roster(new_roster: Array[GladiatorTemplate]) -> void:
 	roster = new_roster
 	_rebuild_roster_list()
 	if roster.size() > 0:
@@ -111,7 +111,7 @@ func set_roster(new_roster: Array[CharacterTemplate]) -> void:
 		_show_empty_state()
 
 
-func select_character(template: CharacterTemplate) -> void:
+func select_character(template: GladiatorTemplate) -> void:
 	if template == null:
 		_show_empty_state()
 		return
@@ -143,7 +143,7 @@ func _rebuild_roster_list() -> void:
 		roster_list.add_child(_create_empty_slot_card())
 
 
-func _create_roster_card(template: CharacterTemplate) -> Button:
+func _create_roster_card(template: GladiatorTemplate) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 64)
 	var label := template.display_name if template.display_name != "" else "Unnamed"
@@ -166,7 +166,7 @@ func _create_empty_slot_card() -> Button:
 	return btn
 
 
-func _populate_sheet(t: CharacterTemplate) -> void:
+func _populate_sheet(t: GladiatorTemplate) -> void:
 	name_label.text = t.display_name if t.display_name != "" else "Unnamed Gladiator"
 	var species_line := t.species_or_class if t.species_or_class != "" else "Unknown"
 	if t.character_id != "":

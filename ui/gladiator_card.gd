@@ -4,7 +4,7 @@ extends PanelContainer
 ## Compact reusable card showing name, fame, weapon and activity.
 ## Unarmed / Observation are rendered in red.
 
-signal gladiator_selected(template: CharacterTemplate)
+signal gladiator_selected(template: GladiatorTemplate)
 
 @onready var portrait: TextureRect = %Portrait
 @onready var name_label: Label = %NameLabel
@@ -12,13 +12,13 @@ signal gladiator_selected(template: CharacterTemplate)
 @onready var weapon_label: Label = %WeaponLabel
 @onready var activity_label: Label = %ActivityLabel
 
-var template: CharacterTemplate
+var template: GladiatorTemplate
 
 const COLOR_NORMAL := Color(0.9, 0.85, 0.75)
 const COLOR_WARNING := Color(0.95, 0.35, 0.3)
 
 
-func setup(t: CharacterTemplate) -> void:
+func setup(t: GladiatorTemplate) -> void:
 	template = t
 	_refresh()
 

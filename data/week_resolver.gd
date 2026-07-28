@@ -33,9 +33,9 @@ static func resolve_week(roster: Array, guild: GuildState) -> Array[String]:
 	lines.append("=== Week %d Summary ===" % guild.current_week)
 
 	for g in roster:
-		if not g is CharacterTemplate:
+		if not g is GladiatorTemplate:
 			continue
-		var t: CharacterTemplate = g
+		var t: GladiatorTemplate = g
 		var parts: Array[String] = []
 
 		# --- Activity resolution ---
@@ -90,7 +90,7 @@ static func resolve_week(roster: Array, guild: GuildState) -> Array[String]:
 	return lines
 
 
-static func _apply_secondary(t: CharacterTemplate, sec: StringName, magnitude: float) -> void:
+static func _apply_secondary(t: GladiatorTemplate, sec: StringName, magnitude: float) -> void:
 	match sec:
 		&"max_health":
 			t.base_max_health += int(magnitude)

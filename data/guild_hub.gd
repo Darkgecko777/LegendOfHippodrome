@@ -41,7 +41,7 @@ var selected_category: Category = Category.NONE
 var selected_index: int = -1
 
 # Assignment row tracking (parallel arrays)
-var row_gladiators: Array[CharacterTemplate] = []
+var row_gladiators: Array[GladiatorTemplate] = []
 var row_weapon_options: Array[OptionButton] = []
 var row_activity_options: Array[OptionButton] = []
 var _updating_dropdowns := false  # prevent re-entrant signals
@@ -116,7 +116,7 @@ func request_advance_week() -> void:
 
 	var has_observer := false
 	for g in roster:
-		if g is CharacterTemplate and g.assigned_training == null:
+		if g is GladiatorTemplate and g.assigned_training == null:
 			has_observer = true
 			break
 	var has_unused := guild_state.get_available_training(roster).size() > 0
@@ -129,7 +129,7 @@ func request_advance_week() -> void:
 
 	# Clear activities after resolution (weapons stay)
 	for g in roster:
-		if g is CharacterTemplate:
+		if g is GladiatorTemplate:
 			g.assigned_training = null
 
 	_refresh_all()
@@ -152,7 +152,7 @@ func _populate_gladiator_list() -> void:
 		return
 	gladiator_list.clear()
 	for offer in market_state.gladiator_offers:
-		var t: CharacterTemplate = offer["template"]
+		var t: GladiatorTemplate = offer["template"]
 		var price: int = offer["price"]
 		var desc := _build_fog_descriptors(t)
 		var line := "%s  |  Prefers %s  |  %s  |  %d gold" % [
@@ -177,7 +177,7 @@ func _populate_training_list() -> void:
 		training_list.add_item("%s  (Tier %d)  —  %d gold" % [t.display_name, t.tier, t.cost])
 
 
-func _build_fog_descriptors(t: CharacterTemplate) -> String:
+func _build_fog_descriptors(t: GladiatorTemplate) -> String:
 	var stats := [
 		{"name": "vitality", "value": t.base_vitality},
 		{"name": "endurance", "value": t.base_endurance},
@@ -274,11 +274,11 @@ func _purchase_gladiator(index: int) -> void:
 		return
 	var offer: Dictionary = market_state.gladiator_offers[index]
 	var price: int = offer["price"]
-	var template: CharacterTemplate = offer["template"]
+	var template: GladiatorTemplate = offer["template"]
 	if not guild_state.spend_gold(price):
 		if market_status: market_status.text = "Not enough gold."
 		return
-	var new_roster: Array[CharacterTemplate] = []
+	var new_roster: Array[GladiatorTemplate] = []
 	new_roster.assign(current)
 	new_roster.append(template)
 	roster_sheet.set_roster(new_roster)
@@ -363,9 +363,9 @@ func _rebuild_assignment_rows() -> void:
 		return
 
 	for g in roster:
-		if not g is CharacterTemplate:
+		if not g is GladiatorTemplate:
 			continue
-		var t: CharacterTemplate = g
+		var t: GladiatorTemplate = g
 
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
@@ -412,7 +412,7 @@ func _refresh_all_dropdowns() -> void:
 	var roster: Array = roster_sheet.roster if roster_sheet else []
 
 	for i in row_gladiators.size():
-		var t: CharacterTemplate = row_gladiators[i]
+		var t: GladiatorTemplate = row_gladiators[i]
 		var wpn_opt: OptionButton = row_weapon_options[i]
 		var act_opt: OptionButton = row_activity_options[i]
 
@@ -464,7 +464,7 @@ func _refresh_all_dropdowns() -> void:
 	_updating_dropdowns = false
 
 
-func _on_weapon_dropdown_selected(index: int, t: CharacterTemplate, opt: OptionButton) -> void:
+func _on_weapon_dropdown_selected(index: int, t: GladiatorTemplate, opt: OptionButton) -> void:
 	if _updating_dropdowns:
 		return
 	var meta = opt.get_item_metadata(index)
@@ -474,7 +474,7 @@ func _on_weapon_dropdown_selected(index: int, t: CharacterTemplate, opt: OptionB
 		assignments_status.text = "%s → %s" % [t.get_display_name(), t.get_weapon_display()]
 
 
-func _on_activity_dropdown_selected(index: int, t: CharacterTemplate, opt: OptionButton) -> void:
+func _on_activity_dropdown_selected(index: int, t: GladiatorTemplate, opt: OptionButton) -> void:
 	if _updating_dropdowns:
 		return
 	var meta = opt.get_item_metadata(index)

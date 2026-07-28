@@ -1,17 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://c2e6uufejd2k8"]
+[gd_scene format=3 uid="uid://c2e6uufejd2k8"]
 
-[ext_resource type="Script" path="res://data/guild_hub.gd" id="1_hub"]
-[ext_resource type="Script" path="res://data/gladiator_generator.gd" id="2_gen"]
-[ext_resource type="PackedScene" uid="uid://b8rostercharsheet01" path="res://ui/RosterCharacterSheet.tscn" id="3_roster"]
-[ext_resource type="Script" path="res://data/gladiator_generator_rules.gd" id="4_rules"]
+[ext_resource type="Script" uid="uid://bdmjcs1s0isug" path="res://data/guild_hub.gd" id="1_hub"]
+[ext_resource type="Script" uid="uid://3asoubflbh3f" path="res://data/gladiator_generator.gd" id="2_gen"]
+[ext_resource type="PackedScene" uid="uid://cs6awieqfrm4w" path="res://ui/RosterCharacterSheet.tscn" id="3_roster"]
+[ext_resource type="Script" uid="uid://dpgs4e0ipt6hb" path="res://data/gladiator_generator_rules.gd" id="4_rules"]
 
 [sub_resource type="Resource" id="Rules_main"]
 script = ExtResource("4_rules")
-id_prefix = "GLD"
-default_species = "Human"
-default_visual_key = "placeholder_gladiator"
 
-[node name="GuildHub" type="Control"]
+[node name="GuildHub" type="Control" unique_id=935021135]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +17,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_hub")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1053830868]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,7 +26,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.06, 0.05, 1)
 
-[node name="MainVBox" type="VBoxContainer" parent="."]
+[node name="MainVBox" type="VBoxContainer" parent="." unique_id=1602238346]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -38,53 +35,53 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 0
 
-[node name="GlobalChrome" type="PanelContainer" parent="MainVBox"]
+[node name="GlobalChrome" type="PanelContainer" parent="MainVBox" unique_id=1507650425]
 layout_mode = 2
 
-[node name="ChromeMargin" type="MarginContainer" parent="MainVBox/GlobalChrome"]
+[node name="ChromeMargin" type="MarginContainer" parent="MainVBox/GlobalChrome" unique_id=352756730]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="ChromeRow" type="HBoxContainer" parent="MainVBox/GlobalChrome/ChromeMargin"]
+[node name="ChromeRow" type="HBoxContainer" parent="MainVBox/GlobalChrome/ChromeMargin" unique_id=2039388127]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="GoldLabel" type="Label" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow"]
+[node name="GoldLabel" type="Label" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow" unique_id=50730833]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Gold: 600"
 
-[node name="RenownLabel" type="Label" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow"]
+[node name="RenownLabel" type="Label" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow" unique_id=1643517793]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Renown: 20"
 
-[node name="WeekLabel" type="Label" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow"]
+[node name="WeekLabel" type="Label" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow" unique_id=740764278]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Week 1"
 
-[node name="Spacer" type="Control" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow"]
+[node name="Spacer" type="Control" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow" unique_id=2129540366]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="AdvanceWeekButton" type="Button" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow"]
+[node name="AdvanceWeekButton" type="Button" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow" unique_id=828241084]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 32)
 layout_mode = 2
 text = "Advance Week"
 
-[node name="FightButton" type="Button" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow"]
+[node name="FightButton" type="Button" parent="MainVBox/GlobalChrome/ChromeMargin/ChromeRow" unique_id=550492738]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 32)
 layout_mode = 2
 disabled = true
 text = "Fight"
 
-[node name="ContentMargin" type="MarginContainer" parent="MainVBox"]
+[node name="ContentMargin" type="MarginContainer" parent="MainVBox" unique_id=732072604]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/margin_left = 12
@@ -92,258 +89,258 @@ theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="TabContainer" type="TabContainer" parent="MainVBox/ContentMargin"]
+[node name="TabContainer" type="TabContainer" parent="MainVBox/ContentMargin" unique_id=286448512]
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 1
 
-[node name="Roster" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer"]
+[node name="Roster" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer" unique_id=668941561]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="RosterCharacterSheet" parent="MainVBox/ContentMargin/TabContainer/Roster" instance=ExtResource("3_roster")]
+[node name="RosterCharacterSheet" parent="MainVBox/ContentMargin/TabContainer/Roster" unique_id=1960642315 instance=ExtResource("3_roster")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Market" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer"]
+[node name="Market" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer" unique_id=779434832]
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="MarketPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Market"]
+[node name="MarketPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Market" unique_id=575762548]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="MarketMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel"]
+[node name="MarketMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel" unique_id=1799435577]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="MarketVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin"]
+[node name="MarketVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin" unique_id=933945446]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="HeaderRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox" unique_id=30166481]
 layout_mode = 2
 
-[node name="MarketTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow"]
+[node name="MarketTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow" unique_id=1260791477]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 22
 text = "Market"
 
-[node name="PurchaseButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow"]
+[node name="PurchaseButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/HeaderRow" unique_id=544345892]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 32)
 layout_mode = 2
 disabled = true
 text = "Purchase"
 
-[node name="ListsRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+[node name="ListsRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox" unique_id=512916591]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="GladiatorCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow"]
+[node name="GladiatorCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow" unique_id=1453418803]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="GladiatorHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/GladiatorCol"]
+[node name="GladiatorHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/GladiatorCol" unique_id=75933520]
 layout_mode = 2
 text = "Fresh Recruits (this week)"
 
-[node name="GladiatorList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/GladiatorCol"]
+[node name="GladiatorList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/GladiatorCol" unique_id=538403360]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 180)
 
-[node name="WeaponCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow"]
+[node name="WeaponCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow" unique_id=805312651]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="WeaponHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/WeaponCol"]
+[node name="WeaponHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/WeaponCol" unique_id=1118789542]
 layout_mode = 2
 text = "Weapons (Tier 1)"
 
-[node name="WeaponList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/WeaponCol"]
+[node name="WeaponList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/WeaponCol" unique_id=1582533563]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 180)
 
-[node name="TrainingCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow"]
+[node name="TrainingCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow" unique_id=5173786]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="TrainingHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/TrainingCol"]
+[node name="TrainingHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/TrainingCol" unique_id=609275282]
 layout_mode = 2
 text = "Training & Medic (Tier 1)"
 
-[node name="TrainingList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/TrainingCol"]
+[node name="TrainingList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/ListsRow/TrainingCol" unique_id=1485599270]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 180)
 
-[node name="FooterRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox"]
+[node name="FooterRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox" unique_id=1509579805]
 layout_mode = 2
 
-[node name="MarketStatusLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/FooterRow"]
+[node name="MarketStatusLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/FooterRow" unique_id=526212198]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Roster: 0/5  |  Offers: 5"
 autowrap_mode = 2
 
-[node name="RefreshMarketButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/FooterRow"]
+[node name="RefreshMarketButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Market/MarketPanel/MarketMargin/MarketVBox/FooterRow" unique_id=2077255159]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Refresh Market"
 
-[node name="Assignments" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer"]
+[node name="Assignments" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer" unique_id=378018821]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="AssignmentsPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments"]
+[node name="AssignmentsPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments" unique_id=139519496]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="AssignmentsMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel"]
+[node name="AssignmentsMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel" unique_id=1322842372]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="AssignmentsVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin"]
+[node name="AssignmentsVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin" unique_id=1448254180]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="AssignmentsTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
+[node name="AssignmentsTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox" unique_id=632411496]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Assignments"
 
-[node name="HeaderRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox" unique_id=74021640]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="HdrName" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
-layout_mode = 2
+[node name="HdrName" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow" unique_id=524185972]
 custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
 size_flags_horizontal = 3
 text = "Gladiator"
 
-[node name="HdrFame" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
-layout_mode = 2
+[node name="HdrFame" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow" unique_id=534832486]
 custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
 text = "Fame"
 
-[node name="HdrWeapon" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
-layout_mode = 2
+[node name="HdrWeapon" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow" unique_id=450702577]
 custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
 size_flags_horizontal = 3
 text = "Weapon"
 
-[node name="HdrActivity" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
-layout_mode = 2
+[node name="HdrActivity" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow" unique_id=339738440]
 custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
 size_flags_horizontal = 3
 text = "Activity"
 
-[node name="AssignmentScroll" type="ScrollContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
+[node name="AssignmentScroll" type="ScrollContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox" unique_id=1729984373]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="AssignmentRows" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/AssignmentScroll"]
+[node name="AssignmentRows" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/AssignmentScroll" unique_id=777863571]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="AssignmentsStatusLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
+[node name="AssignmentsStatusLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox" unique_id=865140630]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Select weapons and activities for each gladiator."
 autowrap_mode = 2
 
-[node name="Guild" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer"]
+[node name="Guild" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer" unique_id=130777780]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
-[node name="GuildPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Guild"]
+[node name="GuildPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Guild" unique_id=253138088]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="GuildMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel"]
+[node name="GuildMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel" unique_id=1468653172]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="GuildVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin"]
+[node name="GuildVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin" unique_id=2078928421]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="GuildTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox"]
+[node name="GuildTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox" unique_id=961740296]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Guild Inventory"
 
-[node name="GuildLists" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox"]
+[node name="GuildLists" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox" unique_id=617044222]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 16
 
-[node name="OwnedWeaponsCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists"]
+[node name="OwnedWeaponsCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists" unique_id=137734957]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="OwnedWeaponsHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedWeaponsCol"]
+[node name="OwnedWeaponsHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedWeaponsCol" unique_id=597326350]
 layout_mode = 2
 text = "Owned Weapons"
 
-[node name="OwnedWeaponsList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedWeaponsCol"]
+[node name="OwnedWeaponsList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedWeaponsCol" unique_id=1765292058]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="OwnedTrainingCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists"]
+[node name="OwnedTrainingCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists" unique_id=2012818419]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="OwnedTrainingHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedTrainingCol"]
+[node name="OwnedTrainingHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedTrainingCol" unique_id=1745013105]
 layout_mode = 2
 text = "Owned Training & Medics"
 
-[node name="OwnedTrainingList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedTrainingCol"]
+[node name="OwnedTrainingList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Guild/GuildPanel/GuildMargin/GuildVBox/GuildLists/OwnedTrainingCol" unique_id=1614939462]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Calendar" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer"]
+[node name="Calendar" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer" unique_id=1996333219]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 4
 
-[node name="CalendarPlaceholder" type="Label" parent="MainVBox/ContentMargin/TabContainer/Calendar"]
+[node name="CalendarPlaceholder" type="Label" parent="MainVBox/ContentMargin/TabContainer/Calendar" unique_id=576202352]
 layout_mode = 2
 text = "Calendar — fight registration & history coming soon."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="GladiatorGenerator" type="Node" parent="."]
+[node name="GladiatorGenerator" type="Node" parent="." unique_id=1313251166]
 script = ExtResource("2_gen")
 rules = SubResource("Rules_main")

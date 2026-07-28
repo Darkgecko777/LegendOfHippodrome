@@ -1,7 +1,7 @@
 extends Node
 
 ## Orchestrates gladiator creation using GladiatorGeneratorRules.
-## Produces a fully baked CharacterTemplate ready for the roster.
+## Produces a fully baked GladiatorTemplate ready for the roster.
 
 @export var rules: GladiatorGeneratorRules
 
@@ -14,19 +14,18 @@ func _ready() -> void:
 		rules = GladiatorGeneratorRules.new()
 
 
-func generate_gladiator() -> CharacterTemplate:
+func generate_gladiator() -> GladiatorTemplate:
 	if rules == null:
 		push_error("GladiatorGenerator: No rules assigned.")
 		return null
 
-	var t := CharacterTemplate.new()
+	var t := GladiatorTemplate.new()
 
 	# Identity
 	t.character_id = rules.create_character_id()
 	t.display_name = rules.create_name()
 	t.species_or_class = rules.default_species
 	t.is_alive = true
-	t.is_monster = false
 	t.visual_key = rules.default_visual_key
 	t.fame = 0
 
@@ -68,7 +67,7 @@ func generate_gladiator() -> CharacterTemplate:
 	return t
 
 
-func _bake_secondaries(t: CharacterTemplate) -> void:
+func _bake_secondaries(t: GladiatorTemplate) -> void:
 	# Vitality
 	t.base_max_health = rules.calc_max_health(t.base_vitality)
 	t.base_injury_recovery_chance = rules.calc_injury_recovery_chance(t.base_vitality)

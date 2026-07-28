@@ -8,7 +8,7 @@ const GLADIATOR_BASE_PRICE := 100
 const GLADIATOR_PRICE_VARIANCE := 0.15
 const MAX_GLADIATOR_OFFERS := 5
 
-var gladiator_offers: Array[Dictionary] = []   # { "template": CharacterTemplate, "price": int }
+var gladiator_offers: Array[Dictionary] = []   # { "template": GladiatorTemplate, "price": int }
 var weapon_offers: Array[WeaponData] = []
 var training_offers: Array[TrainingEquipment] = []
 
@@ -29,7 +29,7 @@ func _refresh_gladiators(generator: Node) -> void:
 		push_error("MarketState: Invalid generator.")
 		return
 	for i in MAX_GLADIATOR_OFFERS:
-		var template: CharacterTemplate = generator.generate_gladiator()
+		var template: GladiatorTemplate = generator.generate_gladiator()
 		if template == null:
 			continue
 		var price := _roll_gladiator_price()
