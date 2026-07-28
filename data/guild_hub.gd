@@ -1,11 +1,10 @@
 extends Control
 
 ## Guild Hub controller — Option A layout.
-## Global chrome (gold/renown + Advance Week + Fight) is always visible.
-## Tabs: Roster | Market | Assignments | Guild | Calendar
+## Assignments tab: each gladiator row has Weapon + Activity dropdowns.
+## Dropdowns auto-assign and stay in sync so the same item cannot be chosen twice.
 
 const MAX_ROSTER_SIZE := 5
-const GLADIATOR_CARD_SCENE := preload("res://ui/GladiatorCard.tscn")
 
 @onready var generator: Node = $GladiatorGenerator
 @onready var roster_sheet: RosterCharacterSheet = %RosterCharacterSheet
@@ -26,13 +25,7 @@ const GLADIATOR_CARD_SCENE := preload("res://ui/GladiatorCard.tscn")
 @onready var refresh_button: Button = %RefreshMarketButton
 
 # Assignments
-@onready var card_container: VBoxContainer = %CardContainer
-@onready var assign_weapon_list: ItemList = %AssignWeaponList
-@onready var assign_training_list: ItemList = %AssignTrainingList
-@onready var prediction_label: Label = %PredictionLabel
-@onready var assign_button: Button = %AssignButton
-@onready var unassign_weapon_button: Button = %UnassignWeaponButton
-@onready var unassign_training_button: Button = %UnassignTrainingButton
+@onready var assignment_rows: VBoxContainer = %AssignmentRows
 @onready var assignments_status: Label = %AssignmentsStatusLabel
 
 # Guild ownership
@@ -47,24 +40,22 @@ enum Category { NONE, GLADIATOR, WEAPON, TRAINING }
 var selected_category: Category = Category.NONE
 var selected_index: int = -1
 
-# Assignments selection
-var selected_gladiator: CharacterTemplate = null
-var selected_assign_weapon_idx: int = -1
-var selected_assign_training_idx: int = -1
-var card_instances: Array[GladiatorCard] = []
+# Assignment row tracking (parallel arrays)
+var row_gladiators: Array[CharacterTemplate] = []
+var row_weapon_options: Array[OptionButton] = []
+var row_activity_options: Array[OptionButton] = []
+var _updating_dropdowns := false  # prevent re-entrant signals
 
 
 func _ready() -> void:
 	_ensure_guild_state()
 	_ensure_market_state()
 
-	# Global
 	if advance_week_button:
 		advance_week_button.pressed.connect(_on_advance_week_pressed)
 	if fight_button:
-		fight_button.disabled = true  # not wired yet
+		fight_button.disabled = true
 
-	# Market
 	if purchase_button:
 		purchase_button.pressed.connect(_on_purchase_pressed)
 	if refresh_button:
@@ -75,18 +66,6 @@ func _ready() -> void:
 		weapon_list.item_selected.connect(_on_weapon_selected)
 	if training_list:
 		training_list.item_selected.connect(_on_training_selected)
-
-	# Assignments
-	if assign_weapon_list:
-		assign_weapon_list.item_selected.connect(_on_assign_weapon_selected)
-	if assign_training_list:
-		assign_training_list.item_selected.connect(_on_assign_training_selected)
-	if assign_button:
-		assign_button.pressed.connect(_on_assign_pressed)
-	if unassign_weapon_button:
-		unassign_weapon_button.pressed.connect(_on_unassign_weapon_pressed)
-	if unassign_training_button:
-		unassign_training_button.pressed.connect(_on_unassign_training_pressed)
 
 	_refresh_all()
 
@@ -107,7 +86,7 @@ func _ensure_market_state() -> void:
 
 func _refresh_all() -> void:
 	_refresh_market_ui()
-	_refresh_assignments_ui()
+	_rebuild_assignment_rows()
 	_refresh_guild_ownership_ui()
 	_update_currency_display()
 	_update_market_status()
@@ -135,7 +114,6 @@ func request_advance_week() -> void:
 		return
 	var roster: Array = roster_sheet.roster
 
-	# Soft unused-training safeguard
 	var has_observer := false
 	for g in roster:
 		if g is CharacterTemplate and g.assigned_training == null:
@@ -144,17 +122,15 @@ func request_advance_week() -> void:
 	var has_unused := guild_state.get_available_training(roster).size() > 0
 	if has_observer and has_unused:
 		print("Advance Week warning: observers present and unused training available.")
-		# Full confirmation dialog can be added later; for now we proceed.
 
 	var summary: Array[String] = WeekResolver.resolve_week(roster, guild_state)
 	for line in summary:
 		print(line)
 
-	# Clear assignments after resolution so next week starts clean
+	# Clear activities after resolution (weapons stay)
 	for g in roster:
 		if g is CharacterTemplate:
 			g.assigned_training = null
-			# Weapons stay equipped until unassigned
 
 	_refresh_all()
 	if market_status:
@@ -162,7 +138,7 @@ func request_advance_week() -> void:
 
 
 # ─────────────────────────────────────────────
-# Market
+# Market (unchanged logic)
 # ─────────────────────────────────────────────
 
 func _refresh_market_ui() -> void:
@@ -285,7 +261,7 @@ func _on_purchase_pressed() -> void:
 	_update_purchase_button()
 	_update_currency_display()
 	_update_market_status()
-	_refresh_assignments_ui()
+	_rebuild_assignment_rows()
 	_refresh_guild_ownership_ui()
 
 
@@ -366,159 +342,146 @@ func _update_market_status() -> void:
 
 
 # ─────────────────────────────────────────────
-# Assignments
+# Assignments — per-gladiator dropdown rows
 # ─────────────────────────────────────────────
 
-func _refresh_assignments_ui() -> void:
-	_rebuild_cards()
-	_populate_assign_lists()
-	_update_prediction()
-	_update_assign_buttons()
-
-
-func _rebuild_cards() -> void:
-	if card_container == null or roster_sheet == null:
+func _rebuild_assignment_rows() -> void:
+	if assignment_rows == null or roster_sheet == null or guild_state == null:
 		return
-	for c in card_instances:
-		if is_instance_valid(c):
-			c.queue_free()
-	card_instances.clear()
-	for g in roster_sheet.roster:
+
+	# Clear old rows
+	for child in assignment_rows.get_children():
+		child.queue_free()
+	row_gladiators.clear()
+	row_weapon_options.clear()
+	row_activity_options.clear()
+
+	var roster: Array = roster_sheet.roster
+	if roster.is_empty():
+		if assignments_status:
+			assignments_status.text = "No gladiators in roster. Recruit some from the Market."
+		return
+
+	for g in roster:
 		if not g is CharacterTemplate:
 			continue
-		var card: GladiatorCard = GLADIATOR_CARD_SCENE.instantiate()
-		card_container.add_child(card)
-		card.setup(g)
-		card.gladiator_selected.connect(_on_card_selected)
-		card_instances.append(card)
+		var t: CharacterTemplate = g
 
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		assignment_rows.add_child(row)
 
-func _on_card_selected(t: CharacterTemplate) -> void:
-	selected_gladiator = t
-	for c in card_instances:
-		c.clear_selection_visual()
-	# Re-highlight the selected one (simple approach)
-	for c in card_instances:
-		if c.template == t:
-			c.modulate = Color(1.15, 1.1, 0.95)
-	selected_assign_weapon_idx = -1
-	selected_assign_training_idx = -1
-	if assign_weapon_list: assign_weapon_list.deselect_all()
-	if assign_training_list: assign_training_list.deselect_all()
-	_populate_assign_lists()
-	_update_prediction()
-	_update_assign_buttons()
+		# Name
+		var name_lbl := Label.new()
+		name_lbl.text = t.get_display_name()
+		name_lbl.custom_minimum_size = Vector2(140, 0)
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(name_lbl)
+
+		# Fame (compact)
+		var fame_lbl := Label.new()
+		fame_lbl.text = "Fame %d" % t.fame
+		fame_lbl.custom_minimum_size = Vector2(70, 0)
+		row.add_child(fame_lbl)
+
+		# Weapon dropdown
+		var wpn_opt := OptionButton.new()
+		wpn_opt.custom_minimum_size = Vector2(160, 0)
+		wpn_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(wpn_opt)
+		wpn_opt.item_selected.connect(_on_weapon_dropdown_selected.bind(t, wpn_opt))
+
+		# Activity dropdown
+		var act_opt := OptionButton.new()
+		act_opt.custom_minimum_size = Vector2(200, 0)
+		act_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(act_opt)
+		act_opt.item_selected.connect(_on_activity_dropdown_selected.bind(t, act_opt))
+
+		row_gladiators.append(t)
+		row_weapon_options.append(wpn_opt)
+		row_activity_options.append(act_opt)
+
+	_refresh_all_dropdowns()
 	if assignments_status:
-		assignments_status.text = "Selected: %s" % t.get_display_name()
+		assignments_status.text = "%d gladiators — choose weapon & activity for each." % row_gladiators.size()
 
 
-func _populate_assign_lists() -> void:
-	if assign_weapon_list == null or assign_training_list == null or guild_state == null or roster_sheet == null:
-		return
-	var roster: Array = roster_sheet.roster
-	assign_weapon_list.clear()
-	for w in guild_state.get_available_weapons(roster):
-		assign_weapon_list.add_item(w.display_name)
-	assign_training_list.clear()
-	for t in guild_state.get_available_training(roster):
-		assign_training_list.add_item(t.display_name)
-	for m in guild_state.get_available_medics(roster):
-		assign_training_list.add_item(m.display_name + " (Medic)")
+func _refresh_all_dropdowns() -> void:
+	_updating_dropdowns = true
+	var roster: Array = roster_sheet.roster if roster_sheet else []
 
+	for i in row_gladiators.size():
+		var t: CharacterTemplate = row_gladiators[i]
+		var wpn_opt: OptionButton = row_weapon_options[i]
+		var act_opt: OptionButton = row_activity_options[i]
 
-func _on_assign_weapon_selected(index: int) -> void:
-	selected_assign_weapon_idx = index
-	selected_assign_training_idx = -1
-	if assign_training_list: assign_training_list.deselect_all()
-	_update_prediction()
-	_update_assign_buttons()
+		# --- Weapons ---
+		wpn_opt.clear()
+		wpn_opt.add_item("Unarmed")
+		wpn_opt.set_item_metadata(0, null)
+		var selected_wpn_idx := 0
+		var avail_w := guild_state.get_available_weapons(roster)
+		# Always include the one currently assigned to this gladiator
+		if t.assigned_weapon != null and not avail_w.has(t.assigned_weapon):
+			avail_w.append(t.assigned_weapon)
+		for w in avail_w:
+			var idx := wpn_opt.item_count
+			wpn_opt.add_item(w.display_name)
+			wpn_opt.set_item_metadata(idx, w)
+			if t.assigned_weapon == w:
+				selected_wpn_idx = idx
+		wpn_opt.select(selected_wpn_idx)
 
-
-func _on_assign_training_selected(index: int) -> void:
-	selected_assign_training_idx = index
-	selected_assign_weapon_idx = -1
-	if assign_weapon_list: assign_weapon_list.deselect_all()
-	_update_prediction()
-	_update_assign_buttons()
-
-
-func _update_prediction() -> void:
-	if prediction_label == null:
-		return
-	if selected_gladiator == null:
-		prediction_label.text = "Select a gladiator, then a weapon or training item."
-		return
-	if selected_assign_weapon_idx >= 0:
-		var avail := guild_state.get_available_weapons(roster_sheet.roster)
-		if selected_assign_weapon_idx < avail.size():
-			var w: WeaponData = avail[selected_assign_weapon_idx]
-			prediction_label.text = "Will equip: %s\n(Unarmed → Armed)" % w.display_name
-			return
-	if selected_assign_training_idx >= 0:
-		var train := guild_state.get_available_training(roster_sheet.roster)
-		var meds := guild_state.get_available_medics(roster_sheet.roster)
-		var all: Array = []
-		all.append_array(train)
-		all.append_array(meds)
-		if selected_assign_training_idx < all.size():
-			var item: TrainingEquipment = all[selected_assign_training_idx]
-			if item.is_medic:
-				prediction_label.text = "Medic\nRecovery chance × %.2f this week" % item.recovery_multiplier
-			elif item.linked_primary == &"cunning":
-				prediction_label.text = "%s\nCurrent Cunning +%.1f–%.1f" % [item.display_name, item.cunning_gain_min, item.cunning_gain_max]
-			elif item.linked_primary == &"weapon":
-				prediction_label.text = "%s\nWeapon skill +0.08" % item.display_name
+		# --- Activities ---
+		act_opt.clear()
+		act_opt.add_item("Observation")
+		act_opt.set_item_metadata(0, null)
+		var selected_act_idx := 0
+		var avail_t := guild_state.get_available_training(roster)
+		var avail_m := guild_state.get_available_medics(roster)
+		if t.assigned_training != null:
+			if t.assigned_training.is_medic:
+				if not avail_m.has(t.assigned_training):
+					avail_m.append(t.assigned_training)
 			else:
-				var secs := ", ".join(item.possible_secondaries)
-				prediction_label.text = "%s\nOne of: %s" % [item.display_name, secs]
-			return
-	prediction_label.text = "Select a weapon or training item to see predicted effect."
+				if not avail_t.has(t.assigned_training):
+					avail_t.append(t.assigned_training)
+		for item in avail_t:
+			var idx2 := act_opt.item_count
+			act_opt.add_item(item.display_name)
+			act_opt.set_item_metadata(idx2, item)
+			if t.assigned_training == item:
+				selected_act_idx = idx2
+		for item in avail_m:
+			var idx3 := act_opt.item_count
+			act_opt.add_item(item.display_name + " (Medic)")
+			act_opt.set_item_metadata(idx3, item)
+			if t.assigned_training == item:
+				selected_act_idx = idx3
+		act_opt.select(selected_act_idx)
+
+	_updating_dropdowns = false
 
 
-func _update_assign_buttons() -> void:
-	if assign_button:
-		assign_button.disabled = selected_gladiator == null or (selected_assign_weapon_idx < 0 and selected_assign_training_idx < 0)
-	if unassign_weapon_button:
-		unassign_weapon_button.disabled = selected_gladiator == null or selected_gladiator.assigned_weapon == null
-	if unassign_training_button:
-		unassign_training_button.disabled = selected_gladiator == null or selected_gladiator.assigned_training == null
-
-
-func _on_assign_pressed() -> void:
-	if selected_gladiator == null:
+func _on_weapon_dropdown_selected(index: int, t: CharacterTemplate, opt: OptionButton) -> void:
+	if _updating_dropdowns:
 		return
-	var roster: Array = roster_sheet.roster
-	if selected_assign_weapon_idx >= 0:
-		var avail := guild_state.get_available_weapons(roster)
-		if selected_assign_weapon_idx < avail.size():
-			selected_gladiator.assigned_weapon = avail[selected_assign_weapon_idx]
-	elif selected_assign_training_idx >= 0:
-		var train := guild_state.get_available_training(roster)
-		var meds := guild_state.get_available_medics(roster)
-		var all: Array = []
-		all.append_array(train)
-		all.append_array(meds)
-		if selected_assign_training_idx < all.size():
-			selected_gladiator.assigned_training = all[selected_assign_training_idx]
-	_refresh_assignments_ui()
-	if assignments_status and selected_gladiator:
-		assignments_status.text = "%s updated — %s / %s" % [
-			selected_gladiator.get_display_name(),
-			selected_gladiator.get_weapon_display(),
-			selected_gladiator.get_activity_display()
-		]
+	var meta = opt.get_item_metadata(index)
+	t.assigned_weapon = meta as WeaponData  # null if Unarmed
+	_refresh_all_dropdowns()
+	if assignments_status:
+		assignments_status.text = "%s → %s" % [t.get_display_name(), t.get_weapon_display()]
 
 
-func _on_unassign_weapon_pressed() -> void:
-	if selected_gladiator:
-		selected_gladiator.assigned_weapon = null
-		_refresh_assignments_ui()
-
-
-func _on_unassign_training_pressed() -> void:
-	if selected_gladiator:
-		selected_gladiator.assigned_training = null
-		_refresh_assignments_ui()
+func _on_activity_dropdown_selected(index: int, t: CharacterTemplate, opt: OptionButton) -> void:
+	if _updating_dropdowns:
+		return
+	var meta = opt.get_item_metadata(index)
+	t.assigned_training = meta as TrainingEquipment  # null if Observation
+	_refresh_all_dropdowns()
+	if assignments_status:
+		assignments_status.text = "%s → %s" % [t.get_display_name(), t.get_activity_display()]
 
 
 # ─────────────────────────────────────────────
