@@ -1,10 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://c2e6uufejd2k8"]
+[gd_scene load_steps=5 format=3 uid="uid://c2e6uufejd2k8"]
 
 [ext_resource type="Script" path="res://data/guild_hub.gd" id="1_hub"]
 [ext_resource type="Script" path="res://data/gladiator_generator.gd" id="2_gen"]
 [ext_resource type="PackedScene" uid="uid://b8rostercharsheet01" path="res://ui/RosterCharacterSheet.tscn" id="3_roster"]
 [ext_resource type="Script" path="res://data/gladiator_generator_rules.gd" id="4_rules"]
-[ext_resource type="PackedScene" uid="uid://b8gladiatorcard01" path="res://ui/GladiatorCard.tscn" id="5_card"]
 
 [sub_resource type="Resource" id="Rules_main"]
 script = ExtResource("4_rules")
@@ -220,122 +219,61 @@ size_flags_vertical = 3
 
 [node name="AssignmentsMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
-[node name="AssignmentsHBox" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin"]
+[node name="AssignmentsVBox" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
-[node name="LeftCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox"]
+[node name="AssignmentsTitle" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Assignments"
+
+[node name="HeaderRow" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HdrName" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.9
+text = "Gladiator"
 
-[node name="LeftHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/LeftCol"]
+[node name="HdrFame" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Roster Assignments"
+custom_minimum_size = Vector2(70, 0)
+text = "Fame"
 
-[node name="CardScroll" type="ScrollContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/LeftCol"]
+[node name="HdrWeapon" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+size_flags_horizontal = 3
+text = "Weapon"
+
+[node name="HdrActivity" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/HeaderRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+size_flags_horizontal = 3
+text = "Activity"
+
+[node name="AssignmentScroll" type="ScrollContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CardContainer" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/LeftCol/CardScroll"]
+[node name="AssignmentRows" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox/AssignmentScroll"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="RightCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.1
-theme_override_constants/separation = 10
-
-[node name="RightHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Available Gear"
-
-[node name="ListsHBox" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 12
-
-[node name="WeaponAssignCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/ListsHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="WeaponAssignHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/ListsHBox/WeaponAssignCol"]
-layout_mode = 2
-text = "Weapons"
-
-[node name="AssignWeaponList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/ListsHBox/WeaponAssignCol"]
+[node name="AssignmentsStatusLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsVBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 120)
-
-[node name="TrainingAssignCol" type="VBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/ListsHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="TrainingAssignHeader" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/ListsHBox/TrainingAssignCol"]
-layout_mode = 2
-text = "Training / Medic"
-
-[node name="AssignTrainingList" type="ItemList" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/ListsHBox/TrainingAssignCol"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 120)
-
-[node name="PredictionPanel" type="PanelContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol"]
-layout_mode = 2
-
-[node name="PredictionMargin" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/PredictionPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
-
-[node name="PredictionLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/PredictionPanel/PredictionMargin"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Select a gladiator, then a weapon or training item."
-autowrap_mode = 2
-
-[node name="AssignButtons" type="HBoxContainer" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="AssignButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/AssignButtons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(100, 32)
-layout_mode = 2
-disabled = true
-text = "Assign"
-
-[node name="UnassignWeaponButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/AssignButtons"]
-unique_name_in_owner = true
-layout_mode = 2
-disabled = true
-text = "Clear Weapon"
-
-[node name="UnassignTrainingButton" type="Button" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol/AssignButtons"]
-unique_name_in_owner = true
-layout_mode = 2
-disabled = true
-text = "Clear Activity"
-
-[node name="AssignmentsStatusLabel" type="Label" parent="MainVBox/ContentMargin/TabContainer/Assignments/AssignmentsPanel/AssignmentsMargin/AssignmentsHBox/RightCol"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Select a gladiator to begin."
+text = "Select weapons and activities for each gladiator."
 autowrap_mode = 2
 
 [node name="Guild" type="MarginContainer" parent="MainVBox/ContentMargin/TabContainer"]
