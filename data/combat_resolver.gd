@@ -20,7 +20,7 @@ var gold_reward: int = 0
 var fame_reward: int = 0
 
 # Internal runtime state
-var _g_stance: StringName = &"balanced"
+var _g_stance: StringName = &"aggressive"
 var _m_stance: StringName = &"aggressive"
 var _g_kit: Dictionary = {}
 var _m_kit: Dictionary = {}
@@ -46,7 +46,7 @@ const STANCE_MODS := {
 		"dodge": -8.0,
 		"resistance": -10.0,
 		"initiative": 0,
-		"read_mod": -15.0,   # easier to read
+		"read_mod": -15.0,
 	},
 	&"defensive": {
 		"stamina_recovery": 1.40,
@@ -66,7 +66,7 @@ const STANCE_MODS := {
 		"dodge": 12.0,
 		"resistance": -5.0,
 		"initiative": 5,
-		"read_mod": 15.0,    # harder to read
+		"read_mod": 15.0,
 	},
 }
 
@@ -116,9 +116,9 @@ func _run_exchange() -> void:
 	_emit(&"declaration", &"narrative", "%s declares %s (%s)" % [monster.get_display_name(), m_ability.display_name, _m_stance.capitalize()], {"actor": "monster"})
 
 	# 2. Initiative
-	var g_init := _calc_initiative(true, g_ability)
-	var m_init := _calc_initiative(false, m_ability)
-	var gladiator_first := g_init >= m_init
+	var g_init: float = _calc_initiative(true, g_ability)
+	var m_init: float = _calc_initiative(false, m_ability)
+	var gladiator_first: bool = g_init >= m_init
 
 	_emit(&"initiative", &"decision", "Initiative: %s %.0f vs %s %.0f → %s reveals first" % [
 		gladiator.get_display_name(), g_init,
@@ -126,17 +126,21 @@ func _run_exchange() -> void:
 		gladiator.get_display_name() if gladiator_first else monster.get_display_name()
 	], {})
 
-	# 3. Reveal + possible reaction (the slower fighter may react if a trigger exists)
+	# 3. Reveal + possible reaction
 	if gladiator_first:
 		_emit(&"reveal_order", &"decision", "%s is revealed first." % gladiator.get_display_name(), {})
-		_try_reaction(false, m_ability, g_ability)  # monster may react
+		_try_reaction(false, m_ability, g_ability)
 	else:
 		_emit(&"reveal_order", &"decision", "%s is revealed first." % monster.get_display_name(), {})
-		_try_reaction(true, g_ability, m_ability)   # gladiator may react
+		_try_reaction(true, g_ability, m_ability)
 
 	# Re-fetch abilities in case a reaction changed them
-	g_ability = _g_kit.get(_g_stance, g_ability)
-	m_ability = _m_kit.get(_m_stance, m_ability)
+	var g_refetched = _g_kit.get(_g_stance, g_ability)
+	var m_refetched = _m_kit.get(_m_stance, m_ability)
+	if g_refetched is Ability:
+		g_ability = g_refetched
+	if m_refetched is Ability:
+		m_ability = m_refetched
 
 	# 4. Resolve in initiative order
 	if gladiator_first:
@@ -148,7 +152,7 @@ func _run_exchange() -> void:
 		if _g_health > 0:
 			_resolve_action(true, g_ability)
 
-	# 5. Stamina recovery (stance modified)
+	# 5. Stamina recovery
 	_apply_stamina_recovery(true)
 	_apply_stamina_recovery(false)
 
@@ -163,16 +167,19 @@ func _choose_ability(is_gladiator: bool) -> Ability:
 	var cds: Dictionary = _g_cooldowns if is_gladiator else _m_cooldowns
 	var stamina: float = _g_stamina if is_gladiator else _m_stamina
 
-	var ability: Ability = kit.get(stance)
+	var ability: Ability = kit.get(stance) as Ability
 	if ability == null:
-		# fallback
-		ability = kit.values()[0]
+		var vals: Array = kit.values()
+		if vals.size() > 0:
+			ability = vals[0] as Ability
+	if ability == null:
+		# Absolute fallback so the fight never crashes
+		ability = Ability.create(&"basic", "Basic Attack", &"aggressive", 10, 0, &"standard", false, 1.0)
 
-	# Simple AI: if on cooldown or not enough stamina, try another stance's ability
 	if cds.get(ability.id, 0) > 0 or stamina < ability.stamina_cost:
 		for s in [&"defensive", &"evasive", &"aggressive"]:
-			var alt: Ability = kit.get(s)
-			if alt and cds.get(alt.id, 0) <= 0 and stamina >= alt.stamina_cost:
+			var alt: Ability = kit.get(s) as Ability
+			if alt != null and cds.get(alt.id, 0) <= 0 and stamina >= alt.stamina_cost:
 				if is_gladiator:
 					_g_stance = s
 				else:
@@ -195,7 +202,8 @@ func _calc_initiative(is_gladiator: bool, ability: Ability) -> float:
 		stance = _m_stance
 
 	var value: float = (agi * 2.0) + (prec * 0.5) + randf_range(0.0, 15.0)
-	value += STANCE_MODS[stance]["initiative"]
+	var stance_init = STANCE_MODS[stance]["initiative"]
+	value += float(stance_init)
 
 	match ability.commitment:
 		&"low":
@@ -207,31 +215,30 @@ func _calc_initiative(is_gladiator: bool, ability: Ability) -> float:
 	return value
 
 
-func _try_reaction(is_gladiator: bool, own_ability: Ability, opponent_ability: Ability) -> void:
-	var trigger := _find_trigger(is_gladiator, opponent_ability)
+func _try_reaction(is_gladiator: bool, _own_ability: Ability, opponent_ability: Ability) -> void:
+	var trigger: StringName = _find_trigger(is_gladiator, opponent_ability)
 	if trigger == &"":
 		return
 
 	var cunning: float = gladiator.current_cunning if is_gladiator else monster.cunning
-	var success_chance := clampf(cunning * 6.0, 15.0, 85.0)  # rough scaling
-	# Apply opponent stance readability
+	var success_chance: float = clampf(cunning * 6.0, 15.0, 85.0)
 	var opp_stance: StringName = _m_stance if is_gladiator else _g_stance
-	success_chance += STANCE_MODS[opp_stance]["read_mod"]
+	success_chance += float(STANCE_MODS[opp_stance]["read_mod"])
 	success_chance = clampf(success_chance, 5.0, 95.0)
 
-	var roll := randf() * 100.0
-	var success := roll < success_chance
+	var roll: float = randf() * 100.0
+	var success: bool = roll < success_chance
 
-	var actor_name := gladiator.get_display_name() if is_gladiator else monster.get_display_name()
+	var actor_name: String = gladiator.get_display_name() if is_gladiator else monster.get_display_name()
 	_emit(&"cunning_check", &"decision", "%s Cunning check (%.0f%%) on trigger '%s': %s" % [
 		actor_name, success_chance, trigger, "SUCCESS" if success else "FAIL"
 	], {"success": success, "trigger": trigger})
 
 	if success:
-		var new_stance := _pick_counter_stance(opp_stance)
+		var new_stance: StringName = _pick_counter_stance(opp_stance)
 		var kit: Dictionary = _g_kit if is_gladiator else _m_kit
-		var new_ability: Ability = kit.get(new_stance)
-		if new_ability:
+		var new_ability: Ability = kit.get(new_stance) as Ability
+		if new_ability != null:
 			if is_gladiator:
 				_g_stance = new_stance
 			else:
@@ -273,20 +280,20 @@ func _pick_counter_stance(opponent_stance: StringName) -> StringName:
 		&"evasive":
 			return &"defensive"
 		_:
-			return &"balanced" if false else &"defensive"
+			return &"defensive"
 
 
 func _resolve_action(is_gladiator: bool, ability: Ability) -> void:
-	var actor_name := gladiator.get_display_name() if is_gladiator else monster.get_display_name()
-	var target_name := monster.get_display_name() if is_gladiator else gladiator.get_display_name()
+	var actor_name: String = gladiator.get_display_name() if is_gladiator else monster.get_display_name()
+	var target_name: String = monster.get_display_name() if is_gladiator else gladiator.get_display_name()
 	var stance: StringName = _g_stance if is_gladiator else _m_stance
 	var mods: Dictionary = STANCE_MODS[stance]
 
 	# Stamina cost
 	if is_gladiator:
-		_g_stamina = maxf(0.0, _g_stamina - ability.stamina_cost)
+		_g_stamina = maxf(0.0, _g_stamina - float(ability.stamina_cost))
 	else:
-		_m_stamina = maxf(0.0, _m_stamina - ability.stamina_cost)
+		_m_stamina = maxf(0.0, _m_stamina - float(ability.stamina_cost))
 	_emit(&"stamina_spent", &"resource", "%s spends %d stamina (now %.0f)" % [actor_name, ability.stamina_cost, _g_stamina if is_gladiator else _m_stamina], {})
 
 	# Cooldown
@@ -299,14 +306,14 @@ func _resolve_action(is_gladiator: bool, ability: Ability) -> void:
 	var base_acc: float
 	var base_dodge: float
 	if is_gladiator:
-		base_acc = gladiator.base_accuracy + ability.accuracy_modifier + mods["accuracy"]
-		base_dodge = monster.dodge_chance + STANCE_MODS[_m_stance]["dodge"]
+		base_acc = gladiator.base_accuracy + ability.accuracy_modifier + float(mods["accuracy"])
+		base_dodge = monster.dodge_chance + float(STANCE_MODS[_m_stance]["dodge"])
 	else:
-		base_acc = monster.accuracy + ability.accuracy_modifier + mods["accuracy"]
-		base_dodge = gladiator.base_dodge_chance + STANCE_MODS[_g_stance]["dodge"]
+		base_acc = monster.accuracy + ability.accuracy_modifier + float(mods["accuracy"])
+		base_dodge = gladiator.base_dodge_chance + float(STANCE_MODS[_g_stance]["dodge"])
 
-	var hit_chance := clampf(base_acc - base_dodge, 5.0, 95.0)
-	var roll := randf() * 100.0
+	var hit_chance: float = clampf(base_acc - base_dodge, 5.0, 95.0)
+	var roll: float = randf() * 100.0
 	_emit(&"accuracy_roll", &"debug", "%s accuracy %.0f vs dodge %.0f → %.0f%% (roll %.0f)" % [actor_name, base_acc, base_dodge, hit_chance, roll], {})
 
 	if roll > hit_chance:
@@ -319,12 +326,12 @@ func _resolve_action(is_gladiator: bool, ability: Ability) -> void:
 		return
 
 	# Hit
-	var is_crit := false
+	var is_crit: bool = false
 	var crit_chance: float
 	if is_gladiator:
-		crit_chance = gladiator.base_crit_chance + ability.crit_modifier + mods["crit"]
+		crit_chance = gladiator.base_crit_chance + ability.crit_modifier + float(mods["crit"])
 	else:
-		crit_chance = monster.crit_chance + ability.crit_modifier + mods["crit"]
+		crit_chance = monster.crit_chance + ability.crit_modifier + float(mods["crit"])
 	if randf() * 100.0 < crit_chance:
 		is_crit = true
 
@@ -334,7 +341,7 @@ func _resolve_action(is_gladiator: bool, ability: Ability) -> void:
 	else:
 		base_dmg = float(monster.base_damage)
 
-	var dmg := base_dmg * ability.damage_multiplier * mods["damage"]
+	var dmg: float = base_dmg * ability.damage_multiplier * float(mods["damage"])
 	if is_crit:
 		var crit_mult: float = gladiator.base_crit_multiplier if is_gladiator else monster.crit_multiplier
 		dmg *= crit_mult
@@ -342,13 +349,13 @@ func _resolve_action(is_gladiator: bool, ability: Ability) -> void:
 	# Resistance
 	var resistance: float
 	if is_gladiator:
-		resistance = STANCE_MODS[_m_stance]["resistance"]
+		resistance = float(STANCE_MODS[_m_stance]["resistance"])
 	else:
-		resistance = STANCE_MODS[_g_stance]["resistance"]
+		resistance = float(STANCE_MODS[_g_stance]["resistance"])
 	dmg *= (1.0 - resistance / 100.0)
 	dmg = maxf(1.0, dmg)
 
-	var final_dmg := int(round(dmg))
+	var final_dmg: int = int(round(dmg))
 	if is_gladiator:
 		_m_health = max(0, _m_health - final_dmg)
 	else:
@@ -381,7 +388,7 @@ func _apply_stamina_recovery(is_gladiator: bool) -> void:
 		base_regen = monster.stamina_regen
 		max_stam = float(monster.max_stamina)
 
-	var recovered := base_regen * STANCE_MODS[stance]["stamina_recovery"]
+	var recovered: float = base_regen * float(STANCE_MODS[stance]["stamina_recovery"])
 	if is_gladiator:
 		_g_stamina = minf(max_stam, _g_stamina + recovered)
 	else:
@@ -396,11 +403,14 @@ func _apply_stamina_recovery(is_gladiator: bool) -> void:
 
 func _tick_cooldowns(is_gladiator: bool) -> void:
 	var cds: Dictionary = _g_cooldowns if is_gladiator else _m_cooldowns
+	var to_erase: Array = []
 	for id in cds.keys():
-		cds[id] = cds[id] - 1
-		if cds[id] <= 0:
-			cds.erase(id)
+		cds[id] = int(cds[id]) - 1
+		if int(cds[id]) <= 0:
+			to_erase.append(id)
 			_emit(&"cooldown_ready", &"resource", "%s is ready again." % str(id), {})
+	for id in to_erase:
+		cds.erase(id)
 
 
 func _finish() -> void:
@@ -414,14 +424,14 @@ func _finish() -> void:
 	else:
 		winner = &"monster"
 
-	# Simple reward calc for testing (Intervention reduces purse)
-	var base_gold := 80 + (_exchange * 3)
-	var base_fame := 8 + int(_exchange / 2)
-	var mult := [1.0, 0.75, 0.5, 0.25, 0.1][clamp(intervention_level, 0, 4)]
-	gold_reward = int(base_gold * mult) if winner == &"gladiator" else 0
-	fame_reward = int(base_fame * mult) if winner == &"gladiator" else 0
+	var base_gold: int = 80 + (_exchange * 3)
+	var base_fame: int = 8 + int(_exchange / 2)
+	var mults: Array[float] = [1.0, 0.75, 0.5, 0.25, 0.1]
+	var mult: float = mults[clampi(intervention_level, 0, 4)]
+	gold_reward = int(float(base_gold) * mult) if winner == &"gladiator" else 0
+	fame_reward = int(float(base_fame) * mult) if winner == &"gladiator" else 0
 
-	var winner_name := gladiator.get_display_name() if winner == &"gladiator" else monster.get_display_name()
+	var winner_name: String = gladiator.get_display_name() if winner == &"gladiator" else monster.get_display_name()
 	_emit(&"fight_end", &"narrative", "Fight over — %s is victorious after %d exchanges." % [winner_name, _exchange], {})
 	if winner == &"gladiator":
 		_emit(&"fight_end", &"narrative", "Rewards: %d gold, %d fame (Intervention level %d)." % [gold_reward, fame_reward, intervention_level], {})
