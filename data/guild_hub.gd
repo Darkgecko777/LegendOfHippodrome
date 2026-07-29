@@ -1,6 +1,6 @@
 extends Control
 
-## Guild Hub controller — Option A layout + Calendar registration.
+## Guild Hub controller — Option A layout + Calendar registration + Combat log.
 
 const MAX_ROSTER_SIZE := 5
 
@@ -33,6 +33,16 @@ const MAX_ROSTER_SIZE := 5
 # Calendar (built at runtime under the existing Calendar tab)
 @onready var calendar_tab: MarginContainer = $MainVBox/ContentMargin/TabContainer/Calendar
 
+# Combat tab (created at runtime)
+var combat_tab: MarginContainer
+var combat_log_label: RichTextLabel
+var filter_narrative: CheckBox
+var filter_result: CheckBox
+var filter_decision: CheckBox
+var filter_resource: CheckBox
+var filter_debug: CheckBox
+var last_log_events: Array[Dictionary] = []
+
 var guild_state: GuildState
 var market_state: MarketState
 
@@ -61,6 +71,7 @@ func _ready() -> void:
 	_ensure_guild_state()
 	_ensure_market_state()
 	_build_calendar_ui()
+	_build_combat_tab()
 
 	if advance_week_button:
 		advance_week_button.pressed.connect(_on_advance_week_pressed)
@@ -152,15 +163,11 @@ func request_advance_week() -> void:
 	for line in summary:
 		print(line)
 
-	# Clear activities after resolution (weapons stay)
 	for g in roster:
 		if g is GladiatorTemplate:
 			g.assigned_training = null
 
-	# Refresh match offers each week
 	guild_state.refresh_match_offers(3)
-	# Keep registered match across the week until fought or explicitly cleared
-
 	_refresh_all()
 	if market_status:
 		market_status.text = "Week advanced to %d. See console for full summary." % guild_state.current_week
@@ -169,20 +176,187 @@ func request_advance_week() -> void:
 func _on_fight_pressed() -> void:
 	if not guild_state.has_registered_match():
 		return
-	# Skeleton: just print the match details. Real text-log resolver comes next.
+
 	var rm := guild_state.registered_match
 	var monster: MonsterTemplate = rm.get("monster")
 	var glad: GladiatorTemplate = rm.get("gladiator")
 	var inter: int = rm.get("intervention_level", 0)
-	print("=== FIGHT START ===")
-	print("Gladiator: %s" % (glad.get_display_name() if glad else "?"))
-	print("Weapon: %s" % (glad.get_weapon_display() if glad else "?"))
-	print("Monster: %s (Tier %d)" % [monster.get_display_name() if monster else "?", monster.tier if monster else 0])
-	print("Intervention level: %d" % inter)
-	print("Threat: %d | Base purse: %d gold / %d fame" % [rm.get("threat", 0), rm.get("base_gold", 0), rm.get("base_fame", 0)])
-	print("(Text-log combat resolver not yet implemented — match data is ready.)")
-	# For now we leave the registration in place so the player can inspect it.
-	# Later: resolve → clear_registered_match() → award gold/fame/renown.
+	if monster == null or glad == null:
+		return
+
+	var resolver := CombatResolver.new()
+	resolver.gladiator = glad
+	resolver.monster = monster
+	resolver.intervention_level = inter
+	resolver.knowledge_revealed = guild_state.knows_vulnerabilities(monster)
+	resolver.resolve()
+
+	last_log_events = resolver.log_events
+	_refresh_combat_log()
+
+	# Switch to Combat tab so the player sees the result immediately
+	var tabs: TabContainer = $MainVBox/ContentMargin/TabContainer
+	if tabs and combat_tab:
+		for i in tabs.get_child_count():
+			if tabs.get_child(i) == combat_tab:
+				tabs.current_tab = i
+				break
+
+	# Keep registration for easy re-runs while testing. Clear manually later if desired.
+	print("Combat finished. Winner: %s | Exchanges logged: %d" % [resolver.winner, resolver.log_events.size()])
+
+
+# ─────────────────────────────────────────────
+# Combat tab
+# ─────────────────────────────────────────────
+
+func _build_combat_tab() -> void:
+	var tabs: TabContainer = $MainVBox/ContentMargin/TabContainer
+	if tabs == null:
+		return
+
+	# Re-use an existing empty tab named Combat if present, otherwise create one
+	combat_tab = null
+	for child in tabs.get_children():
+		if child.name == "Combat":
+			combat_tab = child
+			break
+	if combat_tab == null:
+		combat_tab = MarginContainer.new()
+		combat_tab.name = "Combat"
+		tabs.add_child(combat_tab)
+
+	for child in combat_tab.get_children():
+		child.queue_free()
+
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	combat_tab.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Combat Log"
+	title.add_theme_font_size_override("font_size", 20)
+	vbox.add_child(title)
+
+	var filter_row := HBoxContainer.new()
+	filter_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(filter_row)
+
+	filter_narrative = CheckBox.new()
+	filter_narrative.text = "Narrative"
+	filter_narrative.button_pressed = true
+	filter_narrative.toggled.connect(_on_filter_toggled)
+	filter_row.add_child(filter_narrative)
+
+	filter_result = CheckBox.new()
+	filter_result.text = "Results"
+	filter_result.button_pressed = true
+	filter_result.toggled.connect(_on_filter_toggled)
+	filter_row.add_child(filter_result)
+
+	filter_decision = CheckBox.new()
+	filter_decision.text = "Decisions"
+	filter_decision.button_pressed = true
+	filter_decision.toggled.connect(_on_filter_toggled)
+	filter_row.add_child(filter_decision)
+
+	filter_resource = CheckBox.new()
+	filter_resource.text = "Resources"
+	filter_resource.button_pressed = false
+	filter_resource.toggled.connect(_on_filter_toggled)
+	filter_row.add_child(filter_resource)
+
+	filter_debug = CheckBox.new()
+	filter_debug.text = "Debug"
+	filter_debug.button_pressed = false
+	filter_debug.toggled.connect(_on_filter_toggled)
+	filter_row.add_child(filter_debug)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	combat_log_label = RichTextLabel.new()
+	combat_log_label.bbcode_enabled = true
+	combat_log_label.fit_content = true
+	combat_log_label.scroll_following = true
+	combat_log_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	combat_log_label.custom_minimum_size = Vector2(0, 300)
+	scroll.add_child(combat_log_label)
+
+	combat_log_label.text = "Register a fight in the Calendar tab, then press the Fight button."
+
+
+func _on_filter_toggled(_pressed: bool) -> void:
+	_refresh_combat_log()
+
+
+func _refresh_combat_log() -> void:
+	if combat_log_label == null:
+		return
+	if last_log_events.is_empty():
+		combat_log_label.text = "No fight resolved yet."
+		return
+
+	var show_narrative := filter_narrative.button_pressed if filter_narrative else true
+	var show_result := filter_result.button_pressed if filter_result else true
+	var show_decision := filter_decision.button_pressed if filter_decision else true
+	var show_resource := filter_resource.button_pressed if filter_resource else false
+	var show_debug := filter_debug.button_pressed if filter_debug else false
+
+	var lines: PackedStringArray = []
+	for ev in last_log_events:
+		var cat: StringName = ev.get("category", &"")
+		var visible := false
+		match cat:
+			&"narrative":
+				visible = show_narrative
+			&"result":
+				visible = show_result
+			&"decision":
+				visible = show_decision
+			&"resource":
+				visible = show_resource
+			&"debug":
+				visible = show_debug
+			_:
+				visible = show_narrative
+		if not visible:
+			continue
+
+		var text: String = str(ev.get("text", ""))
+		var type: StringName = ev.get("type", &"")
+		# Simple colouring for thought bubbles and key events
+		if type == &"thought_bubble":
+			var colour: String = str(ev.get("data", {}).get("colour", "white"))
+			match colour:
+				"green":
+					text = "[color=lime]%s[/color]" % text
+				"red":
+					text = "[color=salmon]%s[/color]" % text
+				_:
+					text = "[color=lightgray]%s[/color]" % text
+		elif type == &"critical_hit" or type == &"death":
+			text = "[color=gold]%s[/color]" % text
+		elif type == &"exchange_start":
+			text = "[color=aqua]%s[/color]" % text
+
+		lines.append(text)
+
+	combat_log_label.text = "\n".join(lines)
 
 
 # ─────────────────────────────────────────────
@@ -192,7 +366,6 @@ func _on_fight_pressed() -> void:
 func _build_calendar_ui() -> void:
 	if calendar_tab == null:
 		return
-	# Clear the placeholder
 	for child in calendar_tab.get_children():
 		child.queue_free()
 
@@ -222,7 +395,6 @@ func _build_calendar_ui() -> void:
 	lists_row.add_theme_constant_override("separation", 16)
 	vbox.add_child(lists_row)
 
-	# Left: offer list
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -238,7 +410,6 @@ func _build_calendar_ui() -> void:
 	left.add_child(calendar_offers_list)
 	calendar_offers_list.item_selected.connect(_on_offer_selected)
 
-	# Right: detail + registration
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -303,7 +474,6 @@ func _refresh_calendar_ui() -> void:
 		]
 		calendar_offers_list.add_item(line)
 
-	# Gladiator dropdown
 	calendar_gladiator_option.clear()
 	var roster: Array = roster_sheet.roster if roster_sheet else []
 	if roster.is_empty():
